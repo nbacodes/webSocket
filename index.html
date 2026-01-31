@@ -10,5 +10,58 @@
 <body>
 
 </body>
+<h1>Web Socket broadcast console</h1>
+<p id="status">Connecting...</p>
+<form id="message-form">
+    <input type="text" id="message-input" placeholder="Send cargo..." required />
+    <button type="submit">Deploy Message</button>
+</form>
+
+<h3>Live Stream Logs: </h3>
+<pre id="log"></pre>
+<script>
+    const statusEl = document.getElementById("status");
+    const log = document.getElementById("log");
+    const input = document.getElementById("message-input");
+
+    // 1. Initiate the handshake.
+    const socket = new WebSocket('ws://localhost:8080');
+    // it doesnot means connection is ready...until an event is fired
+
+    const appendLog = (label, message) => {
+        const entry = `${new Date().toLocaleDateString()} ${label} ${message}\n`;
+        log.textContent = entry + log.textContent;
+    }
+
+    socket.addEventListener('open', () => {
+        statusEl.textContent = 'CONNECTED: ws://localhost:8080'
+        statusEl.className = 'status-on';
+        appendLog('[SYSTEM]', 'Tunnel Established');
+    })
+
+    socket.addEventListener('close', () => {
+        statusEl.textContent = 'DISCONNECTED: ws://localhost:8080'
+        statusEl.className = 'status-on';
+        appendLog('[SYSTEM]', 'Tunnel Collasped');
+    })
+
+    socket.addEventListener('message', (e) => {
+        appendLog('[RECIEVED]', e.data);
+    })
+
+    document.getElementById('message-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        if (socket.readyState != WebSocket.OPEN) {
+            appendLog('[ERROR]', 'No active tunnel fould');
+        }
+
+        const msg = input.value.trim();
+        socket.send(msg);
+        appendLog('[SEND]', msg);
+        input.value = '';
+    })
+
+</script>
 
 </html>
